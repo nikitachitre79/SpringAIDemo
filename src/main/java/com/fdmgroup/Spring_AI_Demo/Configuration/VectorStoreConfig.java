@@ -1,6 +1,6 @@
 package com.fdmgroup.Spring_AI_Demo.Configuration;
 
-import org.springframework.ai.chat.client.ChatClient;
+ 
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
