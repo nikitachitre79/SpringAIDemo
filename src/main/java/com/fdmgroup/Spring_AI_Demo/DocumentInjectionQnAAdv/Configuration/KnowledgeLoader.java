@@ -7,26 +7,26 @@ import org.springframework.ai.reader.TextReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 //creating chunks of document and adding to vector database
 @Configuration
 public class KnowledgeLoader {
 
     @Bean
-    CommandLineRunner loadKnowledge(
-            VectorStore vectorStore,
-            ResourceLoader resourceLoader) {
+        CommandLineRunner loadKnowledge(
+                        @Qualifier("vectorStore") VectorStore vectorStore,
+                        @Qualifier("hrVectorStore") VectorStore hrVectorStore,
+                        @Qualifier("itVectorStore") VectorStore itVectorStore,
+                        @Qualifier("policyVectorStore") VectorStore policyVectorStore) {
 
         return args -> {
 
-            var resource = resourceLoader
-                    .getResource("classpath:Doc/Company.txt");
-
-            var reader = new TextReader(resource);
-
-            List<Document> documents = reader.get();
+            PathMatchingResourcePatternResolver resolver =
+                    new PathMatchingResourcePatternResolver();
 
             TokenTextSplitter splitter = TokenTextSplitter.builder()
                     .withChunkSize(500)
@@ -35,13 +35,65 @@ public class KnowledgeLoader {
                     .withMaxNumChunks(10000)
                     .withKeepSeparator(true)
                     .build();
-            List<Document> chunks =
-                    splitter.apply(documents);
 
-            vectorStore.add(chunks);
+            int totalChunks = 0;
+
+            totalChunks += loadIntoStore(resolver,
+                    "classpath:Doc/Company.txt",
+                    vectorStore,
+                    splitter);
+
+            totalChunks += loadIntoStore(resolver,
+                    "classpath:Doc/hr.txt",
+                    hrVectorStore,
+                    splitter);
+
+            totalChunks += loadIntoStore(resolver,
+                    "classpath:Doc/it.txt",
+                    itVectorStore,
+                    splitter);
+
+            totalChunks += loadIntoStore(resolver,
+                    "classpath:Doc/policy.txt",
+                    policyVectorStore,
+                    splitter);
 
             System.out.println(
-                    "Loaded " + chunks.size() + " chunks");
+                    "Total Chunks Loaded: " +
+                            totalChunks);
         };
+    }
+
+    private int loadIntoStore(
+            PathMatchingResourcePatternResolver resolver,
+            String path,
+            VectorStore targetStore,
+            TokenTextSplitter splitter) throws Exception {
+
+        Resource[] resources = resolver.getResources(path);
+        int chunksLoaded = 0;
+
+        for (Resource resource : resources) {
+
+                TextReader reader = new TextReader(resource);
+
+                List<Document> documents = reader.get();
+
+                List<Document> chunks =
+                        splitter.apply(documents);
+
+                targetStore.add(chunks);
+
+                chunksLoaded += chunks.size();
+
+                System.out.println(
+                        "Loaded " +
+                                resource.getFilename() +
+                                " => " +
+                                chunks.size() +
+                                " chunks");
+            }
+
+        return chunksLoaded;
     }
 }
