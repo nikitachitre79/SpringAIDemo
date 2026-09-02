@@ -5,16 +5,4 @@ Follow feature branches as below
 4. RAG_with_memory
 5. Agents_with_RAG_and_Tools
 6. Agents_with_RAG_and_MCPTool_sendEmail
-                Router Agent
-                     |
-    ----------------------------------
-    |              |                |
-    v              v                v
- HR Agent     IT Agent      Policy Agent
-                                    |
-                                    |
-                                    v
-                              Email Agent
-                                    |
-                                    v
-                               MCP Server
+
